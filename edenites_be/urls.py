@@ -26,19 +26,20 @@ from django.views.generic import RedirectView
 from rest_framework.permissions import AllowAny
 
 class PublicDefaultRouter(DefaultRouter):
-    def get_api_root_view(self):
+    def get_api_root_view(self, api_urls=None):
         # Grab DRF's built-in root view…
         view = super().get_api_root_view()
         # …and override its permission to AllowAny
         view.cls.permission_classes = [AllowAny]
         return view
 
-router = PublicDefaultRouter(trailing_slash=False)
-router.register("categories", CategoryViewSet)
-router.register("courses", CourseViewSet)
-router.register("lessons", LessonViewSet)
-router.register("questions", QuestionViewSet)
-router.register("enrollments", EnrollmentViewSet, basename="enrollments")
+# router = PublicDefaultRouter(trailing_slash=False)
+router = PublicDefaultRouter()
+router.register(r"categories", CategoryViewSet)
+router.register(r"courses", CourseViewSet)
+router.register(r"lessons", LessonViewSet)
+router.register(r"questions", QuestionViewSet)
+router.register(r"enrollments", EnrollmentViewSet, basename="enrollments")
 
 
 urlpatterns = [
