@@ -1,0 +1,25 @@
+# local env file
+cert.crt 
+cert.key 
+# Python
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+venv/
+.venv/
+
+# Django
+*.log
+staticfiles/
+media/
+
+# IDEs
+.vscode/
+.idea/

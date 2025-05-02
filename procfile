@@ -1,0 +1,2 @@
+
+web: gunicorn edenites_be.wsgi --workers 3 --log-file -
