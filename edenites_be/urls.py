@@ -23,8 +23,19 @@ from enrollments.views import EnrollmentViewSet
 from django.conf import settings
 from django.conf.urls.static import static
 from django.views.generic import RedirectView
+from rest_framework.permissions import AllowAny
 
-router = DefaultRouter(trailing_slash=False)
+class PublicDefaultRouter(DefaultRouter):
+    def get_api_root_view(self):
+        # Grab DRF's built-in root view…
+        view = super().get_api_root_view()
+        # …and override its permission to AllowAny
+        view.cls.permission_classes = [AllowAny]
+        return view
+
+router = PublicDefaultRouter(trailing_slash=False)
+router.register("categories", CategoryViewSet)
+
 router.register("categories", CategoryViewSet)
 router.register("courses", CourseViewSet)
 router.register("lessons", LessonViewSet)
