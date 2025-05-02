@@ -35,8 +35,6 @@ class PublicDefaultRouter(DefaultRouter):
 
 router = PublicDefaultRouter(trailing_slash=False)
 router.register("categories", CategoryViewSet)
-
-router.register("categories", CategoryViewSet)
 router.register("courses", CourseViewSet)
 router.register("lessons", LessonViewSet)
 router.register("questions", QuestionViewSet)
