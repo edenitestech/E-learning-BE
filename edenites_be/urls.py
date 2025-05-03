@@ -1,60 +1,56 @@
-"""
-URL configuration for edenites_be project.
+# edenites_be/urls.py
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.1/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from courses.views import CategoryViewSet, CourseViewSet, paystack_webhook, verify_payment
-from content.views import LessonViewSet, QuestionViewSet
-from enrollments.views import EnrollmentViewSet
+from rest_framework.permissions import AllowAny
+from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
-from django.views.generic import RedirectView
-from rest_framework.permissions import AllowAny
+
+from courses.views     import CategoryViewSet, CourseViewSet, PaymentsViewSet
+from content.views     import LessonViewSet, QuestionViewSet
+from enrollments.views import EnrollmentViewSet
+from exams.views       import PastQuestionViewSet
+
 
 class PublicDefaultRouter(DefaultRouter):
+    """
+    Override DRF's API root to be publicly readable.
+    """
     def get_api_root_view(self, api_urls=None):
-        # Grab DRF's built-in root view…
-        view = super().get_api_root_view()
-        # …and override its permission to AllowAny
+        view = super().get_api_root_view(api_urls=api_urls)
         view.cls.permission_classes = [AllowAny]
         return view
 
-# router = PublicDefaultRouter(trailing_slash=False)
+
 router = PublicDefaultRouter()
-router.register(r"categories", CategoryViewSet)
-router.register(r"courses", CourseViewSet)
-router.register(r"lessons", LessonViewSet)
-router.register(r"questions", QuestionViewSet)
-router.register(r"enrollments", EnrollmentViewSet, basename="enrollments")
+router.register(r"categories",          CategoryViewSet)
+router.register(r"courses",             CourseViewSet)
+router.register(r"payments",            PaymentsViewSet,    basename="payments")
+router.register(r"lessons",             LessonViewSet)
+router.register(r"questions",           QuestionViewSet)
+router.register(r"enrollments",         EnrollmentViewSet,  basename="enrollments")
+router.register(r"exams/past-questions", PastQuestionViewSet, basename="pastquestion")
 
 
 urlpatterns = [
+    # Redirect root to the API root
     path("", RedirectView.as_view(url="/api/", permanent=False)),
-    path('admin/', admin.site.urls),
-    path("api/", include(router.urls)),
-    path("api/auth/", include("accounts.urls")),
-    path("api/", include("content.urls")),
-    path("api/", include("enrollments.urls")),
-    path("api/", include("courses.urls")),
-    path("api/exams/", include("exams.urls")),
-    path("api/payments/webhook/", paystack_webhook, name="paystack-webhook"),
-    path("api/payments/verify/<int:order_id>/", verify_payment, name="paystack-verify"),
 
+    # Admin
+    path("admin/", admin.site.urls),
+
+    # API root (all ViewSets)
+    path("api/", include(router.urls)),
+
+    # Auth endpoints (login, register, GDPR, etc.)
+    path("api/auth/", include("accounts.urls")),
+    path("api/courses/", include("courses.urls")),
+    path("api/content/", include("content.urls")),
+    path("api/enrollments/", include("enrollments.urls")),
 ]
 
-
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve media files in DEBUG
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
