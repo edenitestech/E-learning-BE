@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "courses",
     "content",
     "enrollments",
+    "exams",
 ]
 
 # MIDDLEWARE
@@ -100,16 +101,11 @@ DATABASES = {
     )
 }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE':   'django.db.backends.postgresql',
-#         'NAME':     os.getenv('DATABASE_NAME'),
-#         'USER':     os.getenv('DATABASE_USER'),
-#         'PASSWORD': os.getenv('DATABASE_PASSWORD'),
-#         'HOST':     os.getenv('DATABASE_HOST'),
-#         'PORT':     os.getenv('DATABASE_PORT'),
-#     }
-# }
+PAYSTACK_SECRET_KEY = os.getenv("PAYSTACK_SECRET_KEY")
+PAYSTACK_PUBLIC_KEY = os.getenv("PAYSTACK_PUBLIC_KEY")
+PAYSTACK_WEBHOOK_SECRET = os.getenv("PAYSTACK_WEBHOOK_SECRET")
+PAYSTACK_BASE_URL = os.getenv("PAYSTACK_BASE_URL", "https://api.paystack.co")
+DOMAIN = os.getenv("DOMAIN")
 
 # AUTH
 AUTH_USER_MODEL = "accounts.User"

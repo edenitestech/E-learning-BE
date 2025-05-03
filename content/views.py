@@ -4,7 +4,27 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Lesson, Question
 from .serializers import LessonSerializer, QuestionSerializer
+from rest_framework.exceptions import PermissionDenied
+from enrollments.models import Enrollment
 # Create your views here.
+
+class IsEnrolledOrFreePermission(permissions.BasePermission):
+    """
+    Allows access if the lesson is marked `is_free=True` or
+    if the requesting user is enrolled in the parent course.
+    """
+    def has_object_permission(self, request, view, obj):
+        # obj may be a Lesson or a Question
+        lesson = obj if isinstance(obj, Lesson) else obj.lesson
+
+        # free preview?
+        if lesson.is_free or lesson.course.price == 0:
+            return True
+
+        # check enrollment
+        return Enrollment.objects.filter(
+            student=request.user, course=lesson.course
+        ).exists()
 
 class LessonViewSet(viewsets.ModelViewSet):
     queryset = Lesson.objects.all()
@@ -17,6 +37,22 @@ class LessonViewSet(viewsets.ModelViewSet):
         course_id = self.request.query_params.get("course")
         return qs.filter(course_id=course_id) if course_id else qs
 
+    def retrieve(self, request, *args, **kwargs):
+        lesson = self.get_object()
+
+        # free lesson? always allowed
+        if lesson.is_free:
+            return super().retrieve(request, *args, **kwargs)
+
+        # else check if user is enrolled
+        is_enrolled = Enrollment.objects.filter(
+            student=request.user, course=lesson.course
+        ).exists()
+        if not is_enrolled:
+            raise PermissionDenied("You must purchase the course for full access.")
+        return super().retrieve(request, *args, **kwargs)
+ 
+    
 class QuestionViewSet(viewsets.ModelViewSet):
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer

@@ -9,6 +9,7 @@ class Lesson(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     video = models.FileField(upload_to="videos/")
+    is_free  = models.BooleanField(default=False)
 
 class Question(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)

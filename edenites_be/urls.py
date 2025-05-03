@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from courses.views import CategoryViewSet, CourseViewSet
+from courses.views import CategoryViewSet, CourseViewSet, paystack_webhook, verify_payment
 from content.views import LessonViewSet, QuestionViewSet
 from enrollments.views import EnrollmentViewSet
 from django.conf import settings
@@ -50,6 +50,10 @@ urlpatterns = [
     path("api/", include("content.urls")),
     path("api/", include("enrollments.urls")),
     path("api/", include("courses.urls")),
+    path("api/exams/", include("exams.urls")),
+    path("api/payments/webhook/", paystack_webhook, name="paystack-webhook"),
+    path("api/payments/verify/<int:order_id>/", verify_payment, name="paystack-verify"),
+
 ]
 
 

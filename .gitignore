@@ -2,7 +2,7 @@
 cert.crt 
 cert.key 
 # Python
-__pycache__/
+_pycache_/
 *.py[cod]
 *.so
 *.egg
