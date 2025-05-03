@@ -23,6 +23,8 @@ Courses:  GET/POST /api/courses/
 
 Single Course: GET/PUT/DELETE /api/courses/{id}/
 
+Purchase course: POST /api/courses/{id}/purchase/
+
 
 ==========Content App==============
 Lessons:  GET/POST /api/lessons/
@@ -51,3 +53,8 @@ Answers:  GET/POST /api/answers/
 
 Single Answer: GET/PUT/DELETE /api/answers/{id}/
 
+Payment webhook: POST /api/payments/webhook/
+
+
+===========Exams App==============
+JAMB/WAEC past questions: GET /api/exams/past-questions/?exam_type=JAMB&year=2023
