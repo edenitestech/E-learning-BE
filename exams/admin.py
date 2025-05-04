@@ -1,3 +1,8 @@
 from django.contrib import admin
+from .models import PastQuestion
 
-# Register your models here.
+@admin.register(PastQuestion)
+class PastQuestionAdmin(admin.ModelAdmin):
+    list_display   = ("exam_type", "year", "subject")
+    list_filter    = ("exam_type", "year")
+    search_fields  = ("subject",)

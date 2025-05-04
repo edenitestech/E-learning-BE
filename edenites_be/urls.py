@@ -25,12 +25,12 @@ class PublicDefaultRouter(DefaultRouter):
 
 
 router = PublicDefaultRouter()
-router.register(r"categories",          CategoryViewSet)
-router.register(r"courses",             CourseViewSet)
-router.register(r"payments",            PaymentsViewSet,    basename="payments")
-router.register(r"lessons",             LessonViewSet)
-router.register(r"questions",           QuestionViewSet)
-router.register(r"enrollments",         EnrollmentViewSet,  basename="enrollments")
+router.register(r"categories", CategoryViewSet)
+router.register(r"courses", CourseViewSet)
+router.register(r"payments", PaymentsViewSet, basename="payments")
+router.register(r"lessons", LessonViewSet)
+router.register(r"questions", QuestionViewSet)
+router.register(r"enrollments", EnrollmentViewSet, basename="enrollments")
 router.register(r"exams/past-questions", PastQuestionViewSet, basename="pastquestion")
 
 
