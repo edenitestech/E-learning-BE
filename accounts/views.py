@@ -3,6 +3,8 @@ from django.contrib.auth import get_user_model
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import MyTokenObtainPairSerializer
 
 from .serializers import (
     RegisterSerializer,
@@ -23,14 +25,21 @@ from enrollments.serializers import (
 
 User = get_user_model()
 
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
+
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        if not serializer.is_valid():
+            # Return the validation errors
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
         user = serializer.save()
         return Response(ProfileSerializer(user).data, status=status.HTTP_201_CREATED)
+
 
 class ProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -95,5 +104,8 @@ class GDPRDeleteAccountView(APIView):
         Enrollment.objects.filter(student=user).delete()
         LessonProgress.objects.filter(enrollment__student=user).delete()
         Answer.objects.filter(student=user).delete()
-        return Response({"detail": "Account deactivated and personal data removed."},
-                        status=status.HTTP_204_NO_CONTENT)
+        return Response({"detail": "Account deactivated and personal data removed."}, status=status.HTTP_204_NO_CONTENT)
+    
+
+
+

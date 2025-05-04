@@ -108,6 +108,10 @@ PAYSTACK_BASE_URL = os.getenv("PAYSTACK_BASE_URL", "https://api.paystack.co")
 DOMAIN = os.getenv("DOMAIN")
 
 # AUTH
+AUTHENTICATION_BACKENDS = [
+    "accounts.auth_backends.EmailOrUsernameBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
 AUTH_USER_MODEL = "accounts.User"
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

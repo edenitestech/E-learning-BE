@@ -1,6 +1,6 @@
 from django.db import models
 from django.forms import JSONField
-
+from django.utils import timezone
 from courses.models import Course
 
 # Create your models here.
@@ -10,6 +10,7 @@ class Lesson(models.Model):
     title = models.CharField(max_length=200)
     video = models.FileField(upload_to="videos/")
     is_free  = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=True)
 
 class Question(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
