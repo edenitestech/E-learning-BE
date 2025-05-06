@@ -23,3 +23,5 @@ media/
 # IDEs
 .vscode/
 .idea/
+
+accounts/tests.py
