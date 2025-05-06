@@ -4,22 +4,14 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
-from .serializers import MyTokenObtainPairSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
+from .serializers import MyTokenObtainPairSerializer, RegisterSerializer, ProfileSerializer
 
-from .serializers import (
-    RegisterSerializer,
-    ProfileSerializer,
-    FullDataExportSerializer,
-    UserDataExportSerializer,
-)
+from .serializers import (RegisterSerializer, ProfileSerializer,FullDataExportSerializer,UserDataExportSerializer,)
 from courses.models import Course
 from courses.serializers import CourseSerializer
 from enrollments.models import Enrollment, LessonProgress, Answer
-from enrollments.serializers import (
-    EnrollmentSerializer,
-    LessonProgressSerializer,
-    AnswerSerializer,
-)
+from enrollments.serializers import (EnrollmentSerializer, LessonProgressSerializer, AnswerSerializer,)
 
 # Create your views here.
 
@@ -34,11 +26,29 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = RegisterSerializer(data=request.data)
         if not serializer.is_valid():
-            # Return the validation errors
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+        # 1. Create the user
         user = serializer.save()
-        return Response(ProfileSerializer(user).data, status=status.HTTP_201_CREATED)
+
+        # 2. Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access  = str(refresh.access_token)
+        refresh = str(refresh)
+
+        # 3. Serialize user profile
+        user_data = ProfileSerializer(user).data
+
+        # 4. Return both user and tokens
+        return Response(
+            {
+                "user":    user_data,
+                "access":  access,
+                "refresh": refresh,
+            },
+            status=status.HTTP_201_CREATED
+        )
+
 
 
 class ProfileView(APIView):
@@ -53,7 +63,35 @@ class ProfileView(APIView):
         serializer.save()
         return Response(serializer.data)
 
+# Logout views
+class LogoutView(APIView):
+    """
+    Blacklist the refresh token so it—and its associated access token—can no longer be used.
+    """
+    permission_classes = [permissions.IsAuthenticated]
 
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response(
+                {"detail": "Refresh token is required to log out."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+        except Exception:
+            return Response(
+                {"detail": "Invalid or expired refresh token."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response(
+            {"detail": "Logged out successfully."},
+            status=status.HTTP_205_RESET_CONTENT
+        )
+    
 # Provide Data-Access & Erasure Endpoints (GDPR-Style)
 class GDPRDataExportView(APIView):
     permission_classes = [permissions.IsAuthenticated]

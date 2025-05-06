@@ -6,6 +6,7 @@ from .views import (
     ProfileView, 
     GDPRDataExportView, 
     GDPRDeleteAccountView,
+    LogoutView, 
     )
 
 urlpatterns = [
@@ -15,4 +16,6 @@ urlpatterns = [
     path("profile/", ProfileView.as_view(), name="profile"),
     path("gdpr/export/", GDPRDataExportView.as_view(), name="gdpr-export"),
     path("gdpr/delete/", GDPRDeleteAccountView.as_view(), name="gdpr-delete"),
+    path("logout/", LogoutView.as_view(), name="logout"),
+
 ]
