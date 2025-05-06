@@ -5,6 +5,8 @@ Register:  POST /api/auth/register/
 
 Login:   POST /api/auth/login/
 
+Logout: POST /api/auth/logout/
+
 Token Refresh: POST /api/auth/token/refresh/
 
 Profile:  GET/PUT /api/auth/profile/
