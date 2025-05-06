@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.db.models import Count
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import MyTokenObtainPairSerializer, RegisterSerializer, ProfileSerializer
@@ -50,7 +51,7 @@ class RegisterView(APIView):
         )
 
 
-
+# profile views
 class ProfileView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -62,6 +63,54 @@ class ProfileView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+    
+# Dashboard views
+class DashboardView(APIView):
+    """
+    GET /api/auth/dashboard/
+    - If student: list enrolled courses + progress per course.
+    - If instructor: list own courses + enrollment counts.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+
+        if user.is_instructor:
+            # Instructor dashboard
+            courses = Course.objects.filter(instructor=user).annotate(
+                num_students=Count('enrollment')
+            )
+            data = {
+                "role": "instructor",
+                "courses": CourseSerializer(courses, many=True).data,
+                "enrollment_stats": {
+                    c.id: c.num_students for c in courses
+                }
+            }
+        else:
+            # Student dashboard
+            enrollments = Enrollment.objects.filter(student=user)
+            # For each enrollment, count completed lessons
+            progress = LessonProgress.objects.filter(
+                enrollment__in=enrollments, completed=True
+            )
+            # Group count by enrollment.course
+            completed_counts = (
+                progress
+                .values("enrollment__course")
+                .annotate(completed_lessons=Count("id"))
+            )
+            data = {
+                "role": "student",
+                "enrollments": EnrollmentSerializer(enrollments, many=True).data,
+                "progress_summary": {
+                    item["enrollment__course"]: item["completed_lessons"]
+                    for item in completed_counts
+                }
+            }
+
+        return Response(data, status=status.HTTP_200_OK)
 
 # Logout views
 class LogoutView(APIView):
