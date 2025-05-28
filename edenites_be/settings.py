@@ -140,8 +140,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
-    # your other front-end domains…
+    "http://localhost:3002",  # ✅ allow your React frontend dev server
+    "https://edenites-frontend.com",  # ⬅️ if/when you deploy frontend
 ]
+CORS_ALLOW_CREDENTIALS = True
+
 
 # REST FRAMEWORK
 REST_FRAMEWORK = {

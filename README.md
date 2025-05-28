@@ -1,4 +1,4 @@
-================================ API NAVIGATION PATTERNS ==================================
+================================ API DOCUMENTATION NAVIGATION PATTERNS ==================================
 
 =========Authentication=========
 Register:  POST /api/auth/register/
