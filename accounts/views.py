@@ -7,7 +7,7 @@ from django.db.models import Count
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.db import IntegrityError
-from .serializers import MyTokenObtainPairSerializer, RegisterSerializer, ProfileSerializer
+from .serializers import MyTokenObtainPairSerializer, RegisterSerializer, ProfileSerializer, EmailTokenObtainPairSerializer
 
 from .serializers import (RegisterSerializer, ProfileSerializer,FullDataExportSerializer,UserDataExportSerializer,)
 from courses.models import Course
@@ -21,6 +21,9 @@ User = get_user_model()
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+class EmailTokenObtainPairView(TokenObtainPairView):
+    serializer_class = EmailTokenObtainPairSerializer
 
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]

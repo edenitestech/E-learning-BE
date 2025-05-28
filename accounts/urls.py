@@ -7,11 +7,12 @@ from .views import (
     GDPRDataExportView, 
     GDPRDeleteAccountView,
     LogoutView, 
-    DashboardView,
+    DashboardView, 
+    EmailTokenObtainPairView
     )
 
 urlpatterns = [
-    path("login/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("login/", EmailTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("register/", RegisterView.as_view(), name="register"),
     path("profile/", ProfileView.as_view(), name="profile"),
