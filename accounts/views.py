@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from django.db.models import Count
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
+from django.db import IntegrityError
 from .serializers import MyTokenObtainPairSerializer, RegisterSerializer, ProfileSerializer
 
 from .serializers import (RegisterSerializer, ProfileSerializer,FullDataExportSerializer,UserDataExportSerializer,)
