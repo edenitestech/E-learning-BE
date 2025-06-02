@@ -1,3 +1,5 @@
+# accounts/views.py
+
 from django.contrib.auth import get_user_model
 from django.db.models import Count
 from rest_framework import permissions, status
@@ -22,26 +24,19 @@ User = get_user_model()
 class MyTokenObtainPairView(APIView):
     """
     POST /api/auth/login/
-    Accepts {"email": "...", "password": "..."} or {"username": "...", "password": "..."}.
-    Returns { "access": "...", "refresh": "..." } on success.
     """
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         serializer = MyTokenObtainPairSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)
+        # validated_data = { "access": ..., "refresh": ... }
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
 class RegisterView(APIView):
     """
     POST /api/auth/register/
-    Registers a new user. On success, returns:
-      {
-        "user": { id, username, email, is_instructor, first_name, last_name },
-        "access": "<jwt-access-token>",
-        "refresh": "<jwt-refresh-token>"
-      }
     """
     permission_classes = [permissions.AllowAny]
 
@@ -52,7 +47,6 @@ class RegisterView(APIView):
 
         user = serializer.save()
 
-        # Generate JWT tokens
         refresh_obj    = RefreshToken.for_user(user)
         access_token   = str(refresh_obj.access_token)
         refresh_token  = str(refresh_obj)
@@ -71,8 +65,8 @@ class RegisterView(APIView):
 
 class ProfileView(APIView):
     """
-    GET  /api/auth/profile/    -> returns current user’s profile
-    PUT  /api/auth/profile/    -> updates permitted profile fields
+    GET  /api/auth/profile/  → return current user’s profile
+    PUT  /api/auth/profile/  → update the profile fields
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -89,8 +83,6 @@ class ProfileView(APIView):
 class DashboardView(APIView):
     """
     GET /api/auth/dashboard/
-    - If instructor: list their own courses with student counts
-    - If student: list enrolled courses + how many lessons completed per course
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -98,7 +90,6 @@ class DashboardView(APIView):
         user = request.user
 
         if user.is_instructor:
-            # Instructor’s own courses, annotated with the number of students enrolled
             courses = Course.objects.filter(instructor=user).annotate(num_students=Count("enrollment"))
             data = {
                 "role": "instructor",
@@ -106,7 +97,6 @@ class DashboardView(APIView):
                 "enrollment_stats": {c.id: c.num_students for c in courses},
             }
         else:
-            # Student: show their enrollments and lesson‐completion counts
             enrollments = Enrollment.objects.filter(student=user)
             progress = LessonProgress.objects.filter(enrollment__in=enrollments, completed=True)
             completed_counts = (
@@ -129,8 +119,6 @@ class DashboardView(APIView):
 class LogoutView(APIView):
     """
     POST /api/auth/logout/
-    Body: { "refresh": "<jwt-refresh-token>" }
-    Blacklists the refresh token so it and its access token can no longer be used.
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -141,7 +129,6 @@ class LogoutView(APIView):
                 {"detail": "Refresh token is required to log out."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-
         try:
             token = RefreshToken(refresh_token)
             token.blacklist()
@@ -160,12 +147,6 @@ class LogoutView(APIView):
 class GDPRDataExportView(APIView):
     """
     GET /api/auth/gdpr/export/
-    Returns a JSON blob containing:
-      - user profile
-      - courses they created (if instructor)
-      - enrollments (if student)
-      - lesson progress records
-      - quiz answers
     """
     permission_classes = [permissions.IsAuthenticated]
 
@@ -179,11 +160,11 @@ class GDPRDataExportView(APIView):
         )
 
     def get(self, request):
-        user        = request.user
-        courses     = Course.objects.filter(instructor=user)
+        user = request.user
+        courses = Course.objects.filter(instructor=user)
         enrollments = Enrollment.objects.filter(student=user)
-        progress    = LessonProgress.objects.filter(enrollment__student=user)
-        answers     = Answer.objects.filter(student=user)
+        progress = LessonProgress.objects.filter(enrollment__student=user)
+        answers = Answer.objects.filter(student=user)
 
         payload = {
             "user":        UserDataExportSerializer(user).data,
@@ -200,21 +181,18 @@ class GDPRDataExportView(APIView):
 class GDPRDeleteAccountView(APIView):
     """
     DELETE /api/auth/gdpr/delete/
-    “Soft‐deletes” the user: anonymizes username/email, deletes related PII, sets is_active=False.
+    Soft‐delete the user by anonymizing and removing PII.
     """
     permission_classes = [permissions.IsAuthenticated]
 
     def delete(self, request):
         user = request.user
-
-        # Soft‐delete / anonymize
         user.username = f"deleted_user_{user.id}"
         user.email = ""
         user.set_unusable_password()
         user.is_active = False
         user.save()
 
-        # Remove related PII
         Enrollment.objects.filter(student=user).delete()
         LessonProgress.objects.filter(enrollment__student=user).delete()
         Answer.objects.filter(student=user).delete()

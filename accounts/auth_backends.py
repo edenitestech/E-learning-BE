@@ -9,14 +9,15 @@ class EmailOrUsernameBackend(ModelBackend):
     """
 
     def authenticate(self, request, username=None, password=None, **kwargs):
-        # If 'username' wasn’t provided, try to pull it from 'email' kwarg
+        # If 'username' wasn’t provided, pick it up from 'email' kwarg
         if username is None:
-            username = kwargs.get("email")
+            username = kwargs.get("email", None)
 
+        # Now if username is still None or password is None, we bail out
         if not username or not password:
             return None
 
-        # If it contains "@", treat it as an email; otherwise, as a username
+        # At this point, 'username' is a non‐empty string. Check if it contains '@'.
         if "@" in username:
             lookup_field = "email"
         else:
@@ -27,7 +28,7 @@ class EmailOrUsernameBackend(ModelBackend):
         except User.DoesNotExist:
             return None
 
-        # Verify password and that the user is active
+        # Verify password and that the user is not inactive
         if user_obj.check_password(password) and self.user_can_authenticate(user_obj):
             return user_obj
 
