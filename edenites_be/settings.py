@@ -100,11 +100,11 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "edenites_be.wsgi.application"
 
-# ────────────────────────────────────────────────────────────────────────────────
-# 8) DATABASE CONFIGURATION
-# ────────────────────────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────────────────────
+# DATABASE CONFIGURATION
+# ─────────────────────────────────────────────────────────────────────────────
 if DEBUG:
-    # In DEBUG, prefer a local DATABASE_URL_LOCAL if set, else revert to SQLite
+    # Local (SQLite or local Postgres if you set DATABASE_URL_LOCAL)
     local_db_url = os.getenv("DATABASE_URL_LOCAL", "").strip()
     if local_db_url:
         DATABASES = {
@@ -118,10 +118,15 @@ if DEBUG:
             }
         }
 else:
-    # In production, use Render Postgres URL (must be set in Render’s env)
+    # In production: try DATABASE_URL_PROD first, then fall back to DATABASE_URL
+    prod_url = os.getenv("DATABASE_URL_PROD") or os.getenv("DATABASE_URL") or ""
+    if not prod_url:
+        raise RuntimeError(
+            "Missing DATABASE_URL_PROD or DATABASE_URL environment variable"
+        )
     DATABASES = {
         "default": dj_database_url.parse(
-            os.getenv("DATABASE_URL_PROD", ""),
+            prod_url,
             conn_max_age=600,
             ssl_require=True
         )
