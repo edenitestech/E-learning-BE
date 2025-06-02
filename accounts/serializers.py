@@ -1,7 +1,8 @@
-# accounts/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from accounts.auth_backends import EmailOrUsernameBackend
+from rest_framework_simplejwt.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import RefreshToken
+from .auth_backends import EmailOrUsernameBackend
 from courses.serializers import CourseSerializer
 from enrollments.serializers import EnrollmentSerializer, LessonProgressSerializer, AnswerSerializer
 from content.serializers import LessonSerializer, QuestionSerializer
@@ -9,18 +10,21 @@ from content.serializers import LessonSerializer, QuestionSerializer
 User = get_user_model()
 
 class RegisterSerializer(serializers.Serializer):
-    fullname = serializers.CharField(write_only=True)
-    email = serializers.EmailField()
-    password = serializers.CharField(write_only=True, min_length=8)
+    """
+    Registers a new user (splitting 'fullname' into first/last),
+    stores email as both email and username, returns the user instance.
+    """
+    fullname        = serializers.CharField(write_only=True)
+    email           = serializers.EmailField()
+    password        = serializers.CharField(write_only=True, min_length=8)
     confirmPassword = serializers.CharField(write_only=True, min_length=8)
-    is_instructor = serializers.BooleanField(default=False)
-
+    is_instructor   = serializers.BooleanField(default=False)
 
     def validate_email(self, email):
-        # use iexact because EncryptedEmailField only supports that lookup
-        # if User.objects.filter(email__exact=email).exists():
-        #     raise serializers.ValidationError("A user with that email already exists.")
-        return email    
+        # Check if any user already has this (encrypted) email.
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("A user with that email already exists.")
+        return email
 
     def validate(self, data):
         if data["password"] != data["confirmPassword"]:
@@ -28,17 +32,17 @@ class RegisterSerializer(serializers.Serializer):
         return data
 
     def create(self, validated_data):
-        # Split fullname into first and last (naïvely)
         fullname = validated_data.pop("fullname")
-        parts     = fullname.strip().split(" ", 1)
-        first, last = parts[0], parts[1] if len(parts) > 1 else ""
+        parts    = fullname.strip().split(" ", 1)
+        first    = parts[0]
+        last     = parts[1] if len(parts) > 1 else ""
 
         user = User(
-            username=validated_data["email"],   # use email as username
-            email=validated_data["email"],
-            first_name=first,
-            last_name=last,
-            is_instructor=validated_data.get("is_instructor", False),
+            username      = validated_data["email"],  # Use email as username
+            email         = validated_data["email"],
+            first_name    = first,
+            last_name     = last,
+            is_instructor = validated_data.get("is_instructor", False),
         )
         user.set_password(validated_data["password"])
         user.save()
@@ -47,51 +51,80 @@ class RegisterSerializer(serializers.Serializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
+        model  = User
         fields = ("id", "username", "email", "is_instructor", "first_name", "last_name")
         read_only_fields = ("id", "is_instructor")
 
 
 class UserDataExportSerializer(serializers.ModelSerializer):
-    # include user’s own fields
+    """
+    Used for the GDPR export: returns basic user fields.
+    """
     class Meta:
-        model = User
+        model  = User
         fields = ["id", "username", "email", "first_name", "last_name", "is_instructor"]
 
+
 class FullDataExportSerializer(serializers.Serializer):
-    user       = UserDataExportSerializer()
-    courses    = CourseSerializer(many=True)          # courses they created, if instructor
-    enrollments = EnrollmentSerializer(many=True)     # courses they’re enrolled in
-    progress    = LessonProgressSerializer(many=True) # lesson progress records
-    answers     = AnswerSerializer(many=True)         # their quiz answers
+    """
+    Bundles together all the user’s related data for GDPR export.
+    """
+    user        = UserDataExportSerializer()
+    courses     = CourseSerializer(many=True)          # courses they created (if instructor)
+    enrollments = EnrollmentSerializer(many=True)      # courses they’re enrolled in
+    progress    = LessonProgressSerializer(many=True)  # lesson progress records
+    answers     = AnswerSerializer(many=True)          # their quiz answers
 
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
-class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    username_field = 'email'  
-    identifier = serializers.CharField() # email or username
-    password   = serializers.CharField()
+class MyTokenObtainPairSerializer(serializers.Serializer):
+    """
+    Custom “login” serializer that accepts either 'email' or 'username' + 'password'.
+    Returns 'access' + 'refresh' tokens on success.
+    """
+    username = serializers.CharField(required=False, write_only=True)
+    email    = serializers.EmailField(required=False, write_only=True)
+    password = serializers.CharField(write_only=True)
+
+    access  = serializers.CharField(read_only=True)
+    refresh = serializers.CharField(read_only=True)
 
     def validate(self, attrs):
-        identifier = attrs.get("identifier")
-        password   = attrs.get("password")
+        raw_username = attrs.get("username")
+        raw_email    = attrs.get("email")
+        raw_password = attrs.get("password")
 
-        # Use our custom backend to authenticate
+        if not raw_password:
+            raise serializers.ValidationError({"detail": "Password is required."})
+
+        if raw_username:
+            lookup_value = raw_username
+            lookup_field = "username"
+        elif raw_email:
+            lookup_value = raw_email
+            lookup_field = "email"
+        else:
+            raise serializers.ValidationError(
+                {"detail": "Must include either 'email' or 'username' and 'password'."}
+            )
+
+        # Call our custom backend
         user = EmailOrUsernameBackend().authenticate(
             request=self.context.get("request"),
-            username=identifier,
-            password=password
+            username=lookup_value,
+            password=raw_password,
         )
-        if not user:
-            raise serializers.ValidationError("Invalid credentials", code="authorization")
 
-        # Now populate the token
-        data = super().get_token(user)
+        if user is None:
+            raise AuthenticationFailed(
+                {"detail": "No active user found with the given credentials."}
+            )
+
+        # Generate tokens
+        refresh_token_obj = RefreshToken.for_user(user)
+        access_token_str  = str(refresh_token_obj.access_token)
+        refresh_token_str = str(refresh_token_obj)
+
         return {
-            "refresh": str(data),
-            "access":  str(data.access_token),
+            "refresh": refresh_token_str,
+            "access":  access_token_str,
         }
-    
-class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
-    # Read 'email' instead of 'username'
-    username_field = "email"

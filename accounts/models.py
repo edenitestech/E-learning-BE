@@ -7,4 +7,5 @@ from django_cryptography.fields import encrypt
 
 class User(AbstractUser):
     is_instructor = models.BooleanField(default=False)
-    email = encrypt(models.EmailField(unique=True))
+    # email = encrypt(models.EmailField(unique=True))
+    email = models.EmailField(unique=True)
