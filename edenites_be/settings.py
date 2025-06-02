@@ -3,8 +3,9 @@
 import os
 from datetime import timedelta
 from pathlib import Path
-from dotenv import load_dotenv
 import dj_database_url
+from dotenv import load_dotenv
+# import dj_database_url
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 1) LOAD ENVIRONMENT VARIABLES
@@ -27,7 +28,6 @@ DEBUG      = os.getenv("DJANGO_DEBUG", "False") == "True"
 # ────────────────────────────────────────────────────────────────────────────────
 # Comma-separated list in .env → split into Python list
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-# e.g. ["127.0.0.1","localhost","e-learning-be-3n5m.onrender.com"]
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 5) INSTALLED APPS
@@ -118,7 +118,7 @@ if DEBUG:
             }
         }
 else:
-    # In production, use your Render Postgres URL (must be set in Render’s env)
+    # In production, use Render Postgres URL (must be set in Render’s env)
     DATABASES = {
         "default": dj_database_url.parse(
             os.getenv("DATABASE_URL_PROD", ""),
@@ -178,7 +178,6 @@ MEDIA_ROOT = BASE_DIR / "media"
 # 13) CORS CONFIGURATION
 # ────────────────────────────────────────────────────────────────────────────────
 CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
-# e.g. ["http://localhost:3000","http://localhost:3002","https://edenlearn-fe.vercel.app"]
 CORS_ALLOW_CREDENTIALS = True
 
 # ────────────────────────────────────────────────────────────────────────────────

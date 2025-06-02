@@ -12,15 +12,15 @@ class RegisterSerializer(serializers.Serializer):
     fullname = serializers.CharField(write_only=True)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, min_length=8)
-    confirm_password = serializers.CharField(write_only=True, min_length=8)
+    confirmPassword = serializers.CharField(write_only=True, min_length=8)
     is_instructor = serializers.BooleanField(default=False)
 
 
     def validate_email(self, email):
         # use iexact because EncryptedEmailField only supports that lookup
-        if User.objects.filter(email__iexact=email).exists():
-            raise serializers.ValidationError("A user with that email already exists.")
-        return email
+        # if User.objects.filter(email__exact=email).exists():
+        #     raise serializers.ValidationError("A user with that email already exists.")
+        return email    
 
     def validate(self, data):
         if data["password"] != data["confirmPassword"]:
