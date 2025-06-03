@@ -7,10 +7,12 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         fields = ["id", "student", "course", "enrolled_at"]
         read_only_fields = ["id", "student", "enrolled_at"]
 
+
 class LessonProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonProgress
         fields = ["id", "enrollment", "lesson", "completed"]
+
 
 class AnswerSerializer(serializers.ModelSerializer):
     class Meta:

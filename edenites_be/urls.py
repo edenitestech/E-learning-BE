@@ -12,6 +12,7 @@ from courses.views     import CategoryViewSet, CourseViewSet, PaymentsViewSet
 from content.views     import LessonViewSet, QuestionViewSet
 from enrollments.views import EnrollmentViewSet
 from exams.views       import PastQuestionViewSet
+from .api_overview import api_plaintext_overview
 
 # Import the new viewsets for JAMB and testimonials
 from jamb.views         import JAMBSubjectViewSet, JAMBQuestionViewSet, StrategyViewSet
@@ -62,6 +63,7 @@ urlpatterns = [
     path("api/courses/",     include("courses.urls")),
     path("api/content/",     include("content.urls")),
     path("api/enrollments/", include("enrollments.urls")),
+    path("api/overview/", api_plaintext_overview, name="api_plaintext_overview"),
     
 
     # Note: we no longer include 'jamb.urls' or 'testimonials.urls' here,

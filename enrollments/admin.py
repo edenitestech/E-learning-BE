@@ -7,11 +7,13 @@ class EnrollmentAdmin(admin.ModelAdmin):
     list_filter    = ("course",)
     search_fields  = ("student__username", "course__title")
 
+
 @admin.register(LessonProgress)
 class LessonProgressAdmin(admin.ModelAdmin):
     list_display   = ("enrollment", "lesson", "completed")
     list_filter    = ("completed",)
     search_fields  = ("enrollment__student__username", "lesson__title")
+
 
 @admin.register(Answer)
 class AnswerAdmin(admin.ModelAdmin):

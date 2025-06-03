@@ -62,8 +62,13 @@ Payment webhook: POST /api/payments/webhook/
 
 ===========Exams App==============
 JAMB/WAEC past questions: GET /api/exams/past-questions/?exam_type=JAMB&year=2023
+POST /api/exams/past-questions/practice/
+GET /api/exams/past-questions/practice/
+POST /api/exams/past-questions/quiz/
+GET /api/exams/past-questions/quiz/
 
 ===========jamb and testimonials Apps=======================
+
 GET /api/jamb/subjects/
 
 GET /api/jamb/subjects/<slug>/questions/
