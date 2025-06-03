@@ -55,6 +55,8 @@ INSTALLED_APPS = [
     "content",
     "enrollments",
     "exams",
+    'jamb',
+    'testimonials',
 ]
 
 # ────────────────────────────────────────────────────────────────────────────────
