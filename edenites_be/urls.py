@@ -13,6 +13,10 @@ from content.views     import LessonViewSet, QuestionViewSet
 from enrollments.views import EnrollmentViewSet
 from exams.views       import PastQuestionViewSet
 
+# Import the new viewsets for JAMB and testimonials
+from jamb.views         import JAMBSubjectViewSet, JAMBQuestionViewSet, StrategyViewSet
+from testimonials.views import TestimonialViewSet
+
 
 class PublicDefaultRouter(DefaultRouter):
     """
@@ -25,13 +29,22 @@ class PublicDefaultRouter(DefaultRouter):
 
 
 router = PublicDefaultRouter()
+# Existing registrations
 router.register(r"categories", CategoryViewSet)
-router.register(r"courses", CourseViewSet)
-router.register(r"payments", PaymentsViewSet, basename="payments")
-router.register(r"lessons", LessonViewSet)
-router.register(r"questions", QuestionViewSet)
+router.register(r"courses",    CourseViewSet)
+router.register(r"payments",   PaymentsViewSet, basename="payments")
+router.register(r"lessons",    LessonViewSet)
+router.register(r"questions",  QuestionViewSet)
 router.register(r"enrollments", EnrollmentViewSet, basename="enrollments")
 router.register(r"exams/past-questions", PastQuestionViewSet, basename="pastquestion")
+
+# New registrations for JAMB
+router.register(r"jamb/subjects",   JAMBSubjectViewSet,  basename="jamb-subject")
+router.register(r"jamb/questions",  JAMBQuestionViewSet, basename="jamb-question")
+router.register(r"jamb/strategies", StrategyViewSet,     basename="jamb-strategy")
+
+# New registration for testimonials
+router.register(r"testimonials", TestimonialViewSet, basename="testimonial")
 
 
 urlpatterns = [
@@ -45,10 +58,14 @@ urlpatterns = [
     path("api/", include(router.urls)),
 
     # Auth endpoints (login, register, GDPR, etc.)
-    path("api/auth/", include("accounts.urls")),
-    path("api/courses/", include("courses.urls")),
-    path("api/content/", include("content.urls")),
+    path("api/auth/",        include("accounts.urls")),
+    path("api/courses/",     include("courses.urls")),
+    path("api/content/",     include("content.urls")),
     path("api/enrollments/", include("enrollments.urls")),
+    
+
+    # Note: we no longer include 'jamb.urls' or 'testimonials.urls' here,
+    # because their routes have been registered directly on the router above.
 ]
 
 # Serve media files in DEBUG
