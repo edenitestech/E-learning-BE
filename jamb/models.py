@@ -2,6 +2,7 @@
 
 from django.db import models
 
+
 class JAMBSubject(models.Model):
     """
     One JAMB subject (e.g. English, Mathematics, etc.).
@@ -18,20 +19,61 @@ class JAMBSubject(models.Model):
 class JAMBQuestion(models.Model):
     """
     A single practice question, tied to one JAMBSubject.
-    `options` stored as a JSON list: e.g. ["5", "7", "12", "25"]
-    `correct_index` is an integer 0..3.
+
+    We replaced the old JSONField('options') + 'correct_index' with
+    four explicit CharFields for options A..D, and a single-letter 'correct_choice'.
     """
-    subject        = models.ForeignKey(
+    CHOICE_LETTERS = [
+        ("A", "Option A"),
+        ("B", "Option B"),
+        ("C", "Option C"),
+        ("D", "Option D"),
+    ]
+
+    subject       = models.ForeignKey(
         JAMBSubject,
         on_delete=models.CASCADE,
         related_name="questions"
     )
-    question_text  = models.TextField()
-    options        = models.JSONField()             # list of strings
-    correct_index  = models.PositiveSmallIntegerField()
+    question_text = models.TextField()
+
+    option_a      = models.CharField("Option A", max_length=255, null=True)
+    option_b      = models.CharField("Option B", max_length=255, null=True)
+    option_c      = models.CharField("Option C", max_length=255, null=True)
+    option_d      = models.CharField("Option D", max_length=255, null=True)
+
+    correct_choice = models.CharField(
+        max_length=1,
+        choices=CHOICE_LETTERS,
+        help_text="Select A, B, C, or D as the correct answer.",
+        null = True
+    )
 
     def __str__(self):
-        return f"{self.subject.slug} Q#{self.id}"
+        # e.g. "math Q#12 (A)"
+        return f"{self.subject.slug} Q#{self.id} (Correct: {self.correct_choice})"
+ 
+    
+class JAMBOption(models.Model):
+    """
+    A single answer choice for a JAMBQuestion.
+    Each option has a label (e.g. "A", "B", "C", "D"), some text,
+    and a boolean `is_correct` flag.
+    """
+    question   = models.ForeignKey(
+        JAMBQuestion,
+        related_name="options",
+        on_delete=models.CASCADE
+    )
+    label      = models.CharField(max_length=1)   # "A", "B", "C", "D", etc.
+    text       = models.CharField(max_length=255)
+    is_correct = models.BooleanField(
+        default=False,
+        help_text="Mark True for the correct answer"
+    )
+
+    def __str__(self):
+        return f"{self.label}. {self.text}"
 
 
 class Strategy(models.Model):

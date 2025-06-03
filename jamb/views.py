@@ -1,9 +1,6 @@
 # jamb/views.py
 
-import random
-from rest_framework import viewsets
-from django.shortcuts import get_object_or_404
-
+from rest_framework import viewsets, permissions, filters
 from .models import JAMBSubject, JAMBQuestion, Strategy
 from .serializers import (
     JAMBSubjectSerializer,
@@ -11,52 +8,37 @@ from .serializers import (
     StrategySerializer,
 )
 
-
-class JAMBSubjectViewSet(viewsets.ReadOnlyModelViewSet):
+class JAMBSubjectViewSet(viewsets.ModelViewSet):
     """
-    GET /api/jamb/subjects/
-    GET /api/jamb/subjects/{slug}/
+    list/create JAMBSubject, retrieve/update/delete.
     """
-    queryset = JAMBSubject.objects.all()
+    queryset = JAMBSubject.objects.all().order_by("name")
     serializer_class = JAMBSubjectSerializer
-    lookup_field = "slug"  # retrieve by slug instead of numeric ID
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["name", "slug"]
 
 
-class JAMBQuestionViewSet(viewsets.ReadOnlyModelViewSet):
+class JAMBQuestionViewSet(viewsets.ModelViewSet):
     """
-    GET /api/jamb/questions/?subject=<slug>&count=<n>
-    GET /api/jamb/questions/{pk}/
+    list/create JAMBQuestion, retrieve/update/delete.
+    Only authenticated users may create/update; everyone can read.
     """
-    queryset = JAMBQuestion.objects.all()
+    queryset = JAMBQuestion.objects.select_related("subject").all().order_by("subject__name", "id")
     serializer_class = JAMBQuestionSerializer
 
-    def get_queryset(self):
-        qs = super().get_queryset()
-        subject_slug = self.request.query_params.get("subject", None)
-
-        if subject_slug:
-            subject = get_object_or_404(JAMBSubject, slug=subject_slug)
-            qs = qs.filter(subject=subject)
-
-            # if a ?count=<n> parameter is given, return a random subset
-            count_param = self.request.query_params.get("count", None)
-            try:
-                count = int(count_param) if count_param is not None else None
-            except ValueError:
-                count = None
-
-            if count:
-                all_qs = list(qs)
-                random.shuffle(all_qs)
-                return all_qs[:count]
-
-        return qs
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [permissions.IsAuthenticated()]
+        return [permissions.AllowAny()]
 
 
-class StrategyViewSet(viewsets.ReadOnlyModelViewSet):
+class StrategyViewSet(viewsets.ModelViewSet):
     """
-    GET /api/jamb/strategies/
-    GET /api/jamb/strategies/{pk}/
+    list/create Strategy, retrieve/update/delete.
     """
-    queryset = Strategy.objects.all()
+    queryset = Strategy.objects.all().order_by("category")
     serializer_class = StrategySerializer
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ["category"]
