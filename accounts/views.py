@@ -17,9 +17,14 @@ from .serializers import (
 from courses.models import Course
 from courses.serializers import CourseSerializer
 from enrollments.models import Enrollment, LessonProgress, Answer
-from enrollments.serializers import EnrollmentSerializer, LessonProgressSerializer, AnswerSerializer
+from enrollments.serializers import (
+    EnrollmentSerializer,
+    LessonProgressSerializer,
+    AnswerSerializer,
+)
 
 User = get_user_model()
+
 
 class MyTokenObtainPairView(APIView):
     """
@@ -28,9 +33,12 @@ class MyTokenObtainPairView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = MyTokenObtainPairSerializer(data=request.data, context={"request": request})
+        serializer = MyTokenObtainPairSerializer(
+            data=request.data,
+            context={"request": request},
+        )
         serializer.is_valid(raise_exception=True)
-        # validated_data = { "access": ..., "refresh": ... }
+        # validated_data contains {"access": ..., "refresh": ...}
         return Response(serializer.validated_data, status=status.HTTP_200_OK)
 
 
@@ -47,9 +55,9 @@ class RegisterView(APIView):
 
         user = serializer.save()
 
-        refresh_obj    = RefreshToken.for_user(user)
-        access_token   = str(refresh_obj.access_token)
-        refresh_token  = str(refresh_obj)
+        refresh_obj   = RefreshToken.for_user(user)
+        access_token  = str(refresh_obj.access_token)
+        refresh_token = str(refresh_obj)
 
         user_data = ProfileSerializer(user).data
 
@@ -90,15 +98,21 @@ class DashboardView(APIView):
         user = request.user
 
         if user.is_instructor:
-            courses = Course.objects.filter(instructor=user).annotate(num_students=Count("enrollment"))
+            # Instructor: list own courses + enrollment counts
+            courses = Course.objects.filter(instructor=user).annotate(
+                num_students=Count("orders")  # orders → enrollments happen on successful payment
+            )
             data = {
                 "role": "instructor",
                 "courses": CourseSerializer(courses, many=True).data,
                 "enrollment_stats": {c.id: c.num_students for c in courses},
             }
         else:
+            # Student: list enrolled courses + progress counts
             enrollments = Enrollment.objects.filter(student=user)
-            progress = LessonProgress.objects.filter(enrollment__in=enrollments, completed=True)
+            progress = LessonProgress.objects.filter(
+                enrollment__in=enrollments, completed=True
+            )
             completed_counts = (
                 progress
                 .values("enrollment__course")
@@ -201,3 +215,4 @@ class GDPRDeleteAccountView(APIView):
             {"detail": "Account deactivated and personal data removed."},
             status=status.HTTP_204_NO_CONTENT
         )
+

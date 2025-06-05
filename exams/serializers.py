@@ -1,20 +1,40 @@
-# exams/serializers.py
-
 from rest_framework import serializers
-from .models import PastQuestion, Option, Subject
+from .models import (
+    ExamSubject,
+    PastQuestion,
+    PastOption
+)
+
 
 #
-# 1. Existing serializers for read/write PastQuestion + options
+# ─── ExamSubjectSerializer ─────────────────────────────────────────────────────────
 #
-
-class OptionSerializer(serializers.ModelSerializer):
+class ExamSubjectSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Option
+        model = ExamSubject
+        fields = ["id", "name", "slug"]
+        read_only_fields = ["id", "slug"]
+
+
+#
+# ─── PastOptionSerializer ──────────────────────────────────────────────────────────
+#
+class PastOptionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PastOption
         fields = ["id", "label", "text", "is_correct"]
+        read_only_fields = ["id"]
 
 
+#
+# ─── PastQuestionSerializer ────────────────────────────────────────────────────────
+#
 class PastQuestionSerializer(serializers.ModelSerializer):
-    options = OptionSerializer(many=True, read_only=True)
+    subject = serializers.SlugRelatedField(
+        slug_field="slug",
+        queryset=ExamSubject.objects.all()
+    )
+    options = PastOptionSerializer(many=True)
 
     class Meta:
         model = PastQuestion
@@ -31,80 +51,52 @@ class PastQuestionSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "created_at"]
 
+    def create(self, validated_data):
+        opts_data = validated_data.pop("options", [])
+        question = PastQuestion.objects.create(**validated_data)
+        for o in opts_data:
+            PastOption.objects.create(question=question, **o)
+        return question
 
-class SubjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Subject
-        fields = ["id", "name", "slug"]
-        read_only_fields = ["id"]
+    def update(self, instance, validated_data):
+        opts_data = validated_data.pop("options", [])
+        instance.exam_type      = validated_data.get("exam_type", instance.exam_type)
+        instance.year           = validated_data.get("year", instance.year)
+        instance.subject        = validated_data.get("subject", instance.subject)
+        instance.question_text  = validated_data.get("question_text", instance.question_text)
+        instance.solution_text  = validated_data.get("solution_text", instance.solution_text)
+        instance.allow_multiple = validated_data.get("allow_multiple", instance.allow_multiple)
+        instance.save()
+
+        # Replace ALL options if provided:
+        instance.options.all().delete()
+        for o_data in opts_data:
+            PastOption.objects.create(question=instance, **o_data)
+        return instance
 
 
 #
-# 2. Serializer for "Practice mode": posting one answer at a time
+# ─── Serializer for incoming quiz/practice answers ─────────────────────────────────
 #
-
-class AnswerSubmissionSerializer(serializers.Serializer):
+class QuestionAttemptSerializer(serializers.Serializer):
+    """
+    Used by both 'quiz' and 'practice' endpoints.
+    Each entry in 'answers' must have:
+      - question_id : ID of PastQuestion
+      - selected    : list of one or more labels, e.g. ["A"] or ["B","C"]
+    """
     question_id = serializers.IntegerField()
-    selected_label = serializers.ChoiceField(choices=[("A","A"),("B","B"),("C","C"),("D","D")])
-
-    def validate_question_id(self, value):
-        try:
-            PastQuestion.objects.get(pk=value)
-        except PastQuestion.DoesNotExist:
-            raise serializers.ValidationError("Invalid question_id.")
-        return value
+    selected    = serializers.ListField(
+        child=serializers.ChoiceField(choices=[(c, c) for c in "ABCD"]),
+        allow_empty=False
+    )
 
 
-
-# 3. Serializer for "Quiz mode": posting multiple answers at once
-
-class QuizAnswerItemSerializer(serializers.Serializer):
-    question_id    = serializers.IntegerField()
-    selected_label = serializers.ChoiceField(choices=[("A","A"),("B","B"),("C","C"),("D","D")])
-
-    def validate_question_id(self, value):
-        try:
-            PastQuestion.objects.get(pk=value)
-        except PastQuestion.DoesNotExist:
-            raise serializers.ValidationError("Invalid question_id in quiz submission.")
-        return value
-
-
-class QuizSubmissionSerializer(serializers.Serializer):
-    exam_type = serializers.ChoiceField(choices=PastQuestion.EXAM_CHOICES)
-    year      = serializers.IntegerField()
-    subject_id = serializers.IntegerField()
-    answers   = QuizAnswerItemSerializer(many=True)
-
-    def validate_subject_id(self, value):
-        from .models import Subject
-        try:
-            Subject.objects.get(pk=value)
-        except Subject.DoesNotExist:
-            raise serializers.ValidationError("Invalid subject_id.")
-        return value
-
-    def validate(self, attrs):
-        # Ensure at least one answer is provided
-        if not attrs.get("answers"):
-            raise serializers.ValidationError("Must provide at least one answer item.")
-        return attrs
-
-
-# 4. Serializer for returning Quiz results
-
-class QuizResultItemSerializer(serializers.Serializer):
-    question_id    = serializers.IntegerField()
-    question_text  = serializers.CharField()
-    selected_label = serializers.CharField()
-    correct_label  = serializers.CharField()
-    is_correct     = serializers.BooleanField()
-    solution_text  = serializers.CharField()
-
-
-class QuizResultSerializer(serializers.Serializer):
-    total_questions = serializers.IntegerField()
-    correct_count   = serializers.IntegerField()
-    score_percentage = serializers.FloatField()
-    grade            = serializers.CharField()
-    details         = QuizResultItemSerializer(many=True)
+class QuizInputSerializer(serializers.Serializer):
+    """
+    The top‐level input for /past-questions/quiz/ or /past-questions/practice/
+    """
+    exam_type    = serializers.ChoiceField(choices=PastQuestion.EXAM_CHOICES)
+    year         = serializers.IntegerField()
+    subject_slug = serializers.SlugField()
+    answers      = QuestionAttemptSerializer(many=True)

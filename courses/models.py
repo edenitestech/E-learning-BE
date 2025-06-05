@@ -78,38 +78,43 @@ class Lesson(models.Model):
 
 class FollowUpQuestion(models.Model):
     """
-    A multiple-choice question tied to a single Lesson.
+    A multiple-choice question tied to a single Lesson. Now includes 'solution_text.'
     """
-    lesson         = models.ForeignKey(
+    lesson          = models.ForeignKey(
         Lesson,
         on_delete=models.CASCADE,
         related_name="followup_questions"
     )
-    question_text  = models.TextField()
-    allow_multiple = models.BooleanField(
+    question_text   = models.TextField()
+    solution_text   = models.TextField(null=True, help_text="Official solution/explanation.")
+    allow_multiple  = models.BooleanField(
         default=False,
         help_text="If True, more than one choice may be marked correct."
     )
 
     def __str__(self):
-        return f"Q: {self.question_text[:50]}… (Lesson: {self.lesson.title})"
+        # show first 40 chars of question_text
+        return f"Q: {self.question_text[:40]}… (Lesson: {self.lesson.title})"
 
 
 class FollowUpOption(models.Model):
     """
     One choice for a FollowUpQuestion.
     """
+    LABEL_CHOICES = [(c, c) for c in "ABCD"]
+
     question   = models.ForeignKey(
         FollowUpQuestion,
         on_delete=models.CASCADE,
         related_name="options"
     )
-    label      = models.CharField(max_length=1, choices=[(c, c) for c in "ABCD"])
+    label      = models.CharField(max_length=1, choices=LABEL_CHOICES)
     text       = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ("question", "label")
+        ordering = ["label"]
 
     def __str__(self):
         return f"{self.label}. {self.text}"
@@ -152,27 +157,31 @@ class QuizQuestion(models.Model):
         related_name="questions"
     )
     question_text  = models.TextField()
+    solution_text  = models.TextField(null=True, help_text="Official solution/explanation.")
     allow_multiple = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"Quiz {self.quiz.title}: {self.question_text[:50]}…"
+        return f"Quiz {self.quiz.title}: {self.question_text[:40]}…"
 
 
 class QuizOption(models.Model):
     """
     One choice for a QuizQuestion.
     """
+    LABEL_CHOICES = [(c, c) for c in "ABCD"]
+
     question   = models.ForeignKey(
         QuizQuestion,
         on_delete=models.CASCADE,
         related_name="options"
     )
-    label      = models.CharField(max_length=1, choices=[(c, c) for c in "ABCD"])
+    label      = models.CharField(max_length=1, choices=LABEL_CHOICES)
     text       = models.CharField(max_length=255)
     is_correct = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ("question", "label")
+        ordering = ["label"]
 
     def __str__(self):
         return f"{self.question.quiz.course.title} ► {self.question.quiz.title} ► {self.label}. {self.text}"
@@ -242,4 +251,3 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.id} – {self.student.username} ⇒ {self.course.title} [{self.status}]"
-

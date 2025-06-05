@@ -93,7 +93,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     def lessons(self, request, pk=None):
         """
         GET /api/courses/{pk}/lessons/
-        Returns all lessons (with nested follow‐up questions) for this course.
+        Returns all lessons (with nested follow‐up questions + options) for this course.
         If course.is_free=False and user is anonymous, only free lessons are shown.
         """
         course = self.get_object()
@@ -111,24 +111,25 @@ class CourseViewSet(viewsets.ModelViewSet):
     def create_lesson(self, request, pk=None):
         """
         POST /api/courses/{pk}/lessons/
-        Payload must include:
+        Payload example (JSON + multipart for video):
         {
           "order": 1,
           "title": "Lesson Title",
-          "content": "...",
+          "content": "Lesson body...",
           "video": <file>,
           "is_free": false,
           "followup_questions": [
             {
-              "question_text": "...",
+              "question_text": "What is X?",
               "allow_multiple": false,
               "options": [
-                {"label": "A", "text": "Choice A", "is_correct": false},
-                {"label": "B", "text": "Choice B", "is_correct": true},
-                …
+                {"label": "A", "text": "Option A", "is_correct": false},
+                {"label": "B", "text": "Option B", "is_correct": true},
+                {"label": "C", "text": "Option C", "is_correct": false},
+                {"label": "D", "text": "Option D", "is_correct": false}
               ]
             },
-            …
+            ...
           ]
         }
         """
@@ -143,7 +144,12 @@ class CourseViewSet(viewsets.ModelViewSet):
     #
     # ─── Nested: update/delete a Lesson by ID ───────────────────────────────────────
     #
-    @action(detail=True, methods=["put", "patch", "delete"], url_path="lessons/(?P<lesson_id>[^/.]+)", permission_classes=[IsInstructor])
+    @action(
+        detail=True,
+        methods=["put", "patch", "delete"],
+        url_path="lessons/(?P<lesson_id>[^/.]+)",
+        permission_classes=[IsInstructor]
+    )
     def modify_lesson(self, request, pk=None, lesson_id=None):
         """
         PUT /api/courses/{pk}/lessons/{lesson_id}/
@@ -189,20 +195,21 @@ class CourseViewSet(viewsets.ModelViewSet):
     def create_quiz(self, request, pk=None):
         """
         POST /api/courses/{pk}/quizzes/
-        Payload:
+        Payload example:
         {
           "title": "MID1",
           "questions": [
             {
-              "question_text": "...",
+              "question_text": "Define X?",
               "allow_multiple": false,
               "options": [
-                {"label":"A","text":"...","is_correct":false},
-                {"label":"B","text":"...","is_correct":true},
-                …
+                {"label":"A","text":"Opt A","is_correct":false},
+                {"label":"B","text":"Opt B","is_correct":true},
+                {"label":"C","text":"Opt C","is_correct":false},
+                {"label":"D","text":"Opt D","is_correct":false}
               ]
             },
-            …
+            ...
           ]
         }
         """
@@ -217,7 +224,12 @@ class CourseViewSet(viewsets.ModelViewSet):
     #
     # ─── Nested: update/delete a Quiz by ID ─────────────────────────────────────────
     #
-    @action(detail=True, methods=["put", "patch", "delete"], url_path="quizzes/(?P<quiz_id>[^/.]+)", permission_classes=[IsInstructor])
+    @action(
+        detail=True,
+        methods=["put", "patch", "delete"],
+        url_path="quizzes/(?P<quiz_id>[^/.]+)",
+        permission_classes=[IsInstructor]
+    )
     def modify_quiz(self, request, pk=None, quiz_id=None):
         """
         PUT /api/courses/{pk}/quizzes/{quiz_id}/
@@ -264,7 +276,12 @@ class CourseViewSet(viewsets.ModelViewSet):
     #
     # ─── Instructor: approve a student’s exam/project submission ────────────────────
     #
-    @action(detail=True, methods=["post"], url_path="exam-project/(?P<submission_id>[^/.]+)/approve", permission_classes=[IsInstructor])
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="exam-project/(?P<submission_id>[^/.]+)/approve",
+        permission_classes=[IsInstructor]
+    )
     def approve_exam(self, request, pk=None, submission_id=None):
         """
         POST /api/courses/{pk}/exam-project/{submission_id}/approve/
@@ -350,11 +367,11 @@ class CourseViewSet(viewsets.ModelViewSet):
         auth_url                 = resp_data["data"]["authorization_url"]
         order.transaction_id      = resp_data["data"]["reference"]
         order.save(update_fields=["transaction_id"])
-        return Response({"authorization_url": auth_url}, status=status.HTTP_201_CREATED)
+        return Response({ "authorization_url": auth_url }, status=status.HTTP_201_CREATED)
 
 
 #
-# ─── Order & Payment Endpoints (exposed under /api/payments/) ────────────────────
+# ─── Order & Payment Endpoints (exposed under /api/payments/) ─────────────────────
 #
 class PaymentsViewSet(viewsets.ViewSet):
     """

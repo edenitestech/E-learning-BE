@@ -48,11 +48,11 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "django_extensions",
     "django_cryptography",
+    "nested_admin",
 
     # Your apps
     "accounts",
     "courses",
-    "content",
     "enrollments",
     "exams",
     'jamb',
@@ -141,6 +141,13 @@ PAYSTACK_SECRET_KEY    = os.getenv("PAYSTACK_SECRET_KEY")
 PAYSTACK_PUBLIC_KEY    = os.getenv("PAYSTACK_PUBLIC_KEY")
 PAYSTACK_WEBHOOK_SECRET = os.getenv("PAYSTACK_WEBHOOK_SECRET")
 PAYSTACK_BASE_URL      = os.getenv("PAYSTACK_BASE_URL", "https://api.paystack.co")
+EXAM_SUBSCRIPTION_FEES = {
+    "JAMB": "5000.00",
+    "WAEC": "3000.00",
+    "NECO": "3000.00",
+    "JSCE": "2000.00",
+    "FSLC": "1000.00",
+}
 
 # Use a single DOMAIN depending on DEBUG status
 if DEBUG:

@@ -2,12 +2,17 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from rest_framework_simplejwt.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
+
 from .auth_backends import EmailOrUsernameBackend
 from courses.serializers import CourseSerializer
-from enrollments.serializers import EnrollmentSerializer, LessonProgressSerializer, AnswerSerializer
-from content.serializers import LessonSerializer, QuestionSerializer
+from enrollments.serializers import (
+    EnrollmentSerializer,
+    LessonProgressSerializer,
+    AnswerSerializer,
+)
 
 User = get_user_model()
+
 
 class RegisterSerializer(serializers.Serializer):
     """
@@ -21,7 +26,7 @@ class RegisterSerializer(serializers.Serializer):
     is_instructor   = serializers.BooleanField(default=False)
 
     def validate_email(self, email):
-        # Check if any user already has this (encrypted) email.
+        # Check if any user already has this email
         if User.objects.filter(email=email).exists():
             raise serializers.ValidationError("A user with that email already exists.")
         return email
@@ -33,16 +38,16 @@ class RegisterSerializer(serializers.Serializer):
 
     def create(self, validated_data):
         fullname = validated_data.pop("fullname")
-        parts    = fullname.strip().split(" ", 1)
-        first    = parts[0]
-        last     = parts[1] if len(parts) > 1 else ""
+        parts = fullname.strip().split(" ", 1)
+        first = parts[0]
+        last = parts[1] if len(parts) > 1 else ""
 
         user = User(
-            username      = validated_data["email"],  # Use email as username
-            email         = validated_data["email"],
-            first_name    = first,
-            last_name     = last,
-            is_instructor = validated_data.get("is_instructor", False),
+            username=validated_data["email"],  # Use email as username
+            email=validated_data["email"],
+            first_name=first,
+            last_name=last,
+            is_instructor=validated_data.get("is_instructor", False),
         )
         user.set_password(validated_data["password"])
         user.save()
@@ -51,7 +56,7 @@ class RegisterSerializer(serializers.Serializer):
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
-        model  = User
+        model = User
         fields = ("id", "username", "email", "is_instructor", "first_name", "last_name")
         read_only_fields = ("id", "is_instructor")
 
@@ -61,7 +66,7 @@ class UserDataExportSerializer(serializers.ModelSerializer):
     Used for the GDPR export: returns basic user fields.
     """
     class Meta:
-        model  = User
+        model = User
         fields = ["id", "username", "email", "first_name", "last_name", "is_instructor"]
 
 
@@ -69,11 +74,11 @@ class FullDataExportSerializer(serializers.Serializer):
     """
     Bundles together all the user’s related data for GDPR export.
     """
-    user        = UserDataExportSerializer()
-    courses     = CourseSerializer(many=True)          # courses they created (if instructor)
-    enrollments = EnrollmentSerializer(many=True)      # courses they’re enrolled in
-    progress    = LessonProgressSerializer(many=True)  # lesson progress records
-    answers     = AnswerSerializer(many=True)          # their quiz answers
+    user = UserDataExportSerializer()
+    courses = CourseSerializer(many=True)          # courses they created (if instructor)
+    enrollments = EnrollmentSerializer(many=True)  # courses they’re enrolled in
+    progress = LessonProgressSerializer(many=True) # lesson progress records
+    answers = AnswerSerializer(many=True)          # their quiz answers
 
 
 class MyTokenObtainPairSerializer(serializers.Serializer):
@@ -98,10 +103,8 @@ class MyTokenObtainPairSerializer(serializers.Serializer):
 
         if raw_username:
             lookup_value = raw_username
-            lookup_field = "username"
         elif raw_email:
             lookup_value = raw_email
-            lookup_field = "email"
         else:
             raise serializers.ValidationError(
                 {"detail": "Must include either 'email' or 'username' and 'password'."}
