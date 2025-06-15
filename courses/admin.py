@@ -1,3 +1,5 @@
+# admin.py
+import nested_admin
 from django.contrib import admin
 
 from .models import (
@@ -11,13 +13,11 @@ from .models import (
     QuizOption,
     ExamProject,
     Order,
-    FollowUpQuestion,
-    FollowUpOption,
 )
 
 
 #
-# Category/Admin
+# ─── Category/Admin ───────────────────────────────────────────────────────────────
 #
 @admin.register(Category)
 class CategoryAdmin(admin.ModelAdmin):
@@ -26,7 +26,7 @@ class CategoryAdmin(admin.ModelAdmin):
 
 
 #
-# Course/Admin
+# ─── Course/Admin ─────────────────────────────────────────────────────────────────
 #
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
@@ -43,51 +43,67 @@ class CourseAdmin(admin.ModelAdmin):
 
 
 #
-# Lesson & FollowUpQuestion/Admin
+# ─── FollowUpOption Inline ─────────────────────────────────────────────────────────
 #
-class FollowUpOptionInline(admin.TabularInline):
+class FollowUpOptionInline(nested_admin.NestedTabularInline):
     model = FollowUpOption
     extra = 4
+    fields = ("label", "text", "is_correct")
 
 
-class FollowUpQuestionInline(admin.StackedInline):
+#
+# ─── FollowUpQuestion Inline (nested to include its Options) ───────────────────────
+#
+class FollowUpQuestionInline(nested_admin.NestedStackedInline):
     model = FollowUpQuestion
     extra = 1
+    fields = ("question_text", "solution_text", "allow_multiple")
     inlines = [FollowUpOptionInline]
 
 
+#
+# ─── Lesson/Admin (Nested: includes FollowUpQuestionInline) ───────────────────────
+#
 @admin.register(Lesson)
-class LessonAdmin(admin.ModelAdmin):
-    list_display  = ("title", "course", "order", "is_free", "created_at")
-    list_filter   = ("course", "is_free")
-    search_fields = ("title", "content")
-    inlines       = [FollowUpQuestionInline]
+class LessonAdmin(nested_admin.NestedModelAdmin):
+    list_display   = ("title", "course", "order", "is_free", "created_at")
+    list_filter    = ("course", "is_free")
+    search_fields  = ("title", "content")
+    inlines        = [FollowUpQuestionInline]
 
 
 #
-# Quiz & QuizQuestion/Admin
+# ─── QuizOption Inline ─────────────────────────────────────────────────────────────
 #
-class QuizOptionInline(admin.TabularInline):
+class QuizOptionInline(nested_admin.NestedTabularInline):
     model = QuizOption
     extra = 4
+    fields = ("label", "text", "is_correct")
 
 
-class QuizQuestionInline(admin.StackedInline):
+#
+# ─── QuizQuestion Inline (nested to include its Options) ──────────────────────────
+#
+class QuizQuestionInline(nested_admin.NestedStackedInline):
     model = QuizQuestion
     extra = 1
+    fields = ("question_text", "solution_text", "allow_multiple")
     inlines = [QuizOptionInline]
 
 
+#
+# ─── Quiz/Admin (Nested: includes QuizQuestionInline) ──────────────────────────────
+#
 @admin.register(Quiz)
-class QuizAdmin(admin.ModelAdmin):
-    list_display  = ("course", "title", "created_at")
-    list_filter   = ("course", "title")
-    search_fields = ("course__title",)
-    inlines       = [QuizQuestionInline]
+class QuizAdmin(nested_admin.NestedModelAdmin):
+    list_display   = ("course", "title", "created_at")
+    list_filter    = ("course", "title")
+    search_fields  = ("course__title",)
+    inlines        = [QuizQuestionInline]
 
 
 #
-# ExamProject/Admin
+# ─── ExamProject/Admin ─────────────────────────────────────────────────────────────
 #
 @admin.register(ExamProject)
 class ExamProjectAdmin(admin.ModelAdmin):
@@ -98,7 +114,7 @@ class ExamProjectAdmin(admin.ModelAdmin):
 
 
 #
-# Order/Admin
+# ─── Order/Admin ──────────────────────────────────────────────────────────────────
 #
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
@@ -106,34 +122,3 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter     = ("status", "course")
     search_fields   = ("student__username", "transaction_id")
     readonly_fields = ("created_at", "updated_at")
-
-# --------------------------------------------------------------------
-#  Inline the Options under a “Question” admin
-# --------------------------------------------------------------------
-class FollowUpOptionInline(admin.TabularInline):
-    model = FollowUpOption
-    extra = 4
-    fields = ("label", "text", "is_correct")
-
-@admin.register(FollowUpQuestion)
-class FollowUpQuestionAdmin(admin.ModelAdmin):
-    list_display   = ("short_text", "lesson")
-    list_filter    = ("lesson__course",)
-    search_fields  = ("question_text",)
-    inlines        = [FollowUpOptionInline]
-
-    def short_text(self, obj):
-        return obj.question_text[:50]
-    short_text.short_description = "Question (truncated)"
-
-
-# --------------------------------------------------------------------
-#  Still inline “Question” under a “Lesson” admin, but without nesting “Options”
-# --------------------------------------------------------------------
-class FollowUpQuestionInline(admin.StackedInline):
-    model = FollowUpQuestion
-    extra = 1
-    fields = ("question_text", "allow_multiple")
-    # No nested “inlines” attribute here.
-
-

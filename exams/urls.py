@@ -1,8 +1,12 @@
+# exams/urls.py
 from rest_framework.routers import DefaultRouter
-from .views import PastQuestionViewSet, SubjectViewSet
+from .views import SubjectViewSet, PastQuestionViewSet, SubscriptionViewSet
 
 router = DefaultRouter()
-router.register(r"past-questions", PastQuestionViewSet, basename="pastquestion")
-router.register(r"subjects", SubjectViewSet, basename="subject")
+router.register(r"subjects", SubjectViewSet)
+router.register(r"past-questions", PastQuestionViewSet)
+router.register(r"subscriptions", SubscriptionViewSet) 
 
 urlpatterns = router.urls
+
+

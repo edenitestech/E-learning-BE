@@ -5,7 +5,9 @@ from .serializers import (
     LessonProgressSerializer,
     AnswerSerializer,
 )
-from content.models import Option
+
+# ─── Note: We no longer import `content.models.Option` because
+#          the “options” are now in the `courses` app (FollowUpOption/QuizOption).
 
 class EnrollmentViewSet(viewsets.ModelViewSet):
     serializer_class   = EnrollmentSerializer
@@ -39,11 +41,20 @@ class AnswerViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         ans = serializer.save(student=self.request.user)
-        # Determine correctness by looking up the Option
+        # Determine correctness by looking up the proper Option in `courses`:
+        from courses.models import FollowUpOption, QuizOption
+
+        # If this Answer is for a FollowUpQuestion:
         try:
-            opt = Option.objects.get(question=ans.question, label=ans.selected)
+            opt = FollowUpOption.objects.get(question=ans.question, label=ans.selected)
             ans.is_correct = opt.is_correct
-        except Option.DoesNotExist:
-            ans.is_correct = False
+        except FollowUpOption.DoesNotExist:
+            # Otherwise, check if it might be a QuizOption:
+            try:
+                opt = QuizOption.objects.get(question=ans.question, label=ans.selected)
+                ans.is_correct = opt.is_correct
+            except QuizOption.DoesNotExist:
+                ans.is_correct = False
+
         ans.save()
         return super().perform_create(serializer)

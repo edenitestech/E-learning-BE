@@ -22,6 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # ────────────────────────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-hardcoded-key")
 DEBUG      = os.getenv("DJANGO_DEBUG", "False") == "True"
+# DEBUG      = os.getenv('DEBUG') == 'True'
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 4) ALLOWED HOSTS
@@ -48,15 +49,16 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "django_extensions",
     "django_cryptography",
+    "nested_admin",
 
     # Your apps
     "accounts",
     "courses",
-    "content",
     "enrollments",
     "exams",
     'jamb',
     'testimonials',
+    'payment',
 ]
 
 # ────────────────────────────────────────────────────────────────────────────────
@@ -141,6 +143,16 @@ PAYSTACK_SECRET_KEY    = os.getenv("PAYSTACK_SECRET_KEY")
 PAYSTACK_PUBLIC_KEY    = os.getenv("PAYSTACK_PUBLIC_KEY")
 PAYSTACK_WEBHOOK_SECRET = os.getenv("PAYSTACK_WEBHOOK_SECRET")
 PAYSTACK_BASE_URL      = os.getenv("PAYSTACK_BASE_URL", "https://api.paystack.co")
+PAYSTACK_INITIALIZE_URL = 'https://api.paystack.co/transaction/initialize'
+PAYSTACK_VERIFY_URL = 'https://api.paystack.co/transaction/verify/'
+
+EXAM_SUBSCRIPTION_FEES = {
+    "JAMB": "5000.00",
+    "WAEC": "3000.00",
+    "NECO": "3000.00",
+    "JSCE": "2000.00",
+    "FSLC": "1000.00",
+}
 
 # Use a single DOMAIN depending on DEBUG status
 if DEBUG:
