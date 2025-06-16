@@ -1,8 +1,9 @@
 # testimonials/urls.py
-
 from django.urls import path
-from .views import TestimonialListView
+from rest_framework.routers import DefaultRouter
+from .views import TestimonialViewSet
 
-urlpatterns = [
-    
-]
+router = DefaultRouter()
+router.register(r"", TestimonialViewSet, basename="testimonial")
+
+urlpatterns = router.urls
