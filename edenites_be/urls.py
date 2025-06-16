@@ -60,7 +60,7 @@ urlpatterns = [
     path("api/auth/", include("accounts.urls")),
 
     # Include payment URLs for initialize, verify, webhook
-    path("api/payments/", include("payment.urls")),
+    path("api/", include("payment.urls")),
 
     # A plain-text overview of the API
     path("api/overview/", api_plaintext_overview, name="api_plaintext_overview"),
