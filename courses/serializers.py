@@ -1,29 +1,17 @@
+# courses/serializers.py
 from rest_framework import serializers
-from .models import (
-    Category,
-    Course,
-    Lesson,
-    FollowUpQuestion,
-    FollowUpOption,
-    Quiz,
-    QuizQuestion,
-    QuizOption,
-    ExamProject,
-    Order
-)
+from .models import Category, Course, Lesson, FollowUpQuestion, FollowUpOption, Quiz, QuizQuestion, QuizOption, ExamProject, Order
 
-#
-# ─── CategorySerializer ────────────────────────────────────────────────────────────
-#
+# CategorySerializer
+
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ["id", "name"]
         read_only_fields = ["id"]
 
-
 #
-# ─── CourseSerializer ──────────────────────────────────────────────────────────────
+# Course
 #
 class CourseSerializer(serializers.ModelSerializer):
     category   = serializers.SlugRelatedField(slug_field="name", queryset=Category.objects.all())
@@ -32,28 +20,17 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = [
-            "id",
-            "title",
-            "description",
-            "category",
-            "instructor",
-            "price",
-            "is_free",
-            "created_at",
-        ]
-        read_only_fields = ["id", "instructor", "created_at"]
-
+        fields = ["id","title","description","category","instructor","price","is_free","created_at"]
+        read_only_fields = ["id","instructor","created_at"]
 
 #
-# ─── FollowUpOption & Question Serializers ─────────────────────────────────────────
+# Lesson + nested FollowUpQuestions
 #
 class FollowUpOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = FollowUpOption
-        fields = ["id", "label", "text", "is_correct"]
+        fields = ["id","label","text","is_correct"]
         read_only_fields = ["id"]
-
 
 class FollowUpQuestionSerializer(serializers.ModelSerializer):
     options       = FollowUpOptionSerializer(many=True)
@@ -61,42 +38,17 @@ class FollowUpQuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FollowUpQuestion
-        fields = ["id", "question_text", "solution_text", "allow_multiple", "options"]
+        fields = ["id","question_text","solution_text","allow_multiple","options"]
         read_only_fields = ["id"]
 
-    def create(self, validated_data):
-        opts = validated_data.pop("options", [])
-        q = FollowUpQuestion.objects.create(**validated_data)
-        for o in opts:
-            FollowUpOption.objects.create(question=q, **o)
-        return q
-
-    def update(self, instance, validated_data):
-        opts = validated_data.pop("options", [])
-        for attr, val in validated_data.items():
-            setattr(instance, attr, val)
-        instance.save()
-        if opts is not None:
-            instance.options.all().delete()
-            for o in opts:
-                FollowUpOption.objects.create(question=instance, **o)
-        return instance
-
-
-#
-# ─── LessonSerializer ─────────────────────────────────────────────────────────────
-#
 class LessonSerializer(serializers.ModelSerializer):
     followup_questions = FollowUpQuestionSerializer(many=True, required=False)
     video              = serializers.FileField(required=False, allow_null=True)
 
     class Meta:
         model = Lesson
-        fields = [
-            "id", "order", "title", "content", "video", "is_free",
-            "followup_questions", "created_at"
-        ]
-        read_only_fields = ["id", "created_at"]
+        fields = ["id","order","title","content","video","is_free","followup_questions","created_at"]
+        read_only_fields = ["id","created_at"]
 
     def create(self, validated_data):
         questions = validated_data.pop("followup_questions", [])
@@ -110,7 +62,7 @@ class LessonSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         questions = validated_data.pop("followup_questions", [])
-        for attr, val in validated_data.items():
+        for attr,val in validated_data.items():
             setattr(instance, attr, val)
         instance.save()
         if questions is not None:
@@ -122,16 +74,14 @@ class LessonSerializer(serializers.ModelSerializer):
                     FollowUpOption.objects.create(question=fq, **o)
         return instance
 
-
 #
-# ─── QuizOption & Question Serializers ────────────────────────────────────────────
+# Quiz + nested QuizQuestions
 #
 class QuizOptionSerializer(serializers.ModelSerializer):
     class Meta:
         model = QuizOption
-        fields = ["id", "label", "text", "is_correct"]
+        fields = ["id","label","text","is_correct"]
         read_only_fields = ["id"]
-
 
 class QuizQuestionSerializer(serializers.ModelSerializer):
     options       = QuizOptionSerializer(many=True)
@@ -139,7 +89,7 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QuizQuestion
-        fields = ["id", "question_text", "solution_text", "allow_multiple", "options"]
+        fields = ["id","question_text","solution_text","allow_multiple","options"]
         read_only_fields = ["id"]
 
     def create(self, validated_data):
@@ -151,8 +101,8 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         opts = validated_data.pop("options", [])
-        for attr, val in validated_data.items():
-            setattr(instance, attr, val)
+        for attr,val in validated_data.items():
+            setattr(instance,attr,val)
         instance.save()
         if opts is not None:
             instance.options.all().delete()
@@ -160,17 +110,13 @@ class QuizQuestionSerializer(serializers.ModelSerializer):
                 QuizOption.objects.create(question=instance, **o)
         return instance
 
-
-#
-# ─── QuizSerializer ────────────────────────────────────────────────────────────────
-#
 class QuizSerializer(serializers.ModelSerializer):
     questions = QuizQuestionSerializer(many=True, required=False)
 
     class Meta:
         model = Quiz
-        fields = ["id", "title", "questions", "created_at"]
-        read_only_fields = ["id", "created_at"]
+        fields = ["id","title","questions","created_at"]
+        read_only_fields = ["id","created_at"]
 
     def create(self, validated_data):
         qs_data = validated_data.pop("questions", [])
@@ -197,7 +143,7 @@ class QuizSerializer(serializers.ModelSerializer):
 
 
 #
-# ─── ExamProjectSerializer ────────────────────────────────────────────────────────
+# ExamProjectSerializer
 #
 class ExamProjectSerializer(serializers.ModelSerializer):
     student          = serializers.CharField(read_only=True, source="student.username")
@@ -213,9 +159,8 @@ class ExamProjectSerializer(serializers.ModelSerializer):
             "id", "student", "submitted_at", "score", "is_approved", "certificate_file"
         ]
 
-
 #
-# ─── OrderSerializer ───────────────────────────────────────────────────────────────
+# OrderSerializer
 #
 class OrderSerializer(serializers.ModelSerializer):
     student = serializers.CharField(read_only=True, source="student.username")

@@ -21,14 +21,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 3) DEBUG & SECRET KEY
 # ────────────────────────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-hardcoded-key")
-DEBUG      = os.getenv("DJANGO_DEBUG", "False") == "True"
-# DEBUG      = os.getenv('DEBUG') == 'True'
+DEBUG      = True 
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 4) ALLOWED HOSTS
 # ────────────────────────────────────────────────────────────────────────────────
 # Comma-separated list in .env → split into Python list
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
+
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 5) INSTALLED APPS
@@ -195,8 +196,10 @@ MEDIA_ROOT = BASE_DIR / "media"
 # ────────────────────────────────────────────────────────────────────────────────
 # 13) CORS CONFIGURATION
 # ────────────────────────────────────────────────────────────────────────────────
-CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") 
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = True
+CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 14) Django REST Framework

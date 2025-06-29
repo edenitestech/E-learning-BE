@@ -1,13 +1,12 @@
 # courses/urls.py
-# ─── Router & URLs ────────────────────────────────────────────────────────────────
-#
-from rest_framework.routers import DefaultRouter
+from rest_framework.routers import SimpleRouter
 from .views import CategoryViewSet, CourseViewSet
 
-router = DefaultRouter()
-router.register(r"categories", CategoryViewSet)
-router.register(r"courses",    CourseViewSet)
+router = SimpleRouter(trailing_slash=True)
+router.register(r"categories", CategoryViewSet, basename="category")
+router.register(r"", CourseViewSet, basename="course")
 
 urlpatterns = router.urls
+
 
 
