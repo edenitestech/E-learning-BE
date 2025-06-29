@@ -1,4 +1,4 @@
-# admin.py
+# courses/admin.py
 import nested_admin
 from django.contrib import admin
 
@@ -14,8 +14,6 @@ from .models import (
     ExamProject,
     Order,
 )
-
-
 #
 # ─── Category/Admin ───────────────────────────────────────────────────────────────
 #

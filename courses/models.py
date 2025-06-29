@@ -1,10 +1,8 @@
-# models.py
+# courses/models.py
 import os
 from decimal import Decimal
-
 from django.conf import settings
 from django.db import models
-
 
 def certificate_upload_path(instance, filename):
     # Upload certificates under: certificates/{course_id}/{student_id}/{filename}
@@ -14,7 +12,6 @@ def certificate_upload_path(instance, filename):
         f"student_{instance.student.id}",
         filename,
     )
-
 
 class Category(models.Model):
     """

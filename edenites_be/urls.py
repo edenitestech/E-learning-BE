@@ -31,17 +31,14 @@ router = PublicDefaultRouter()
 
 # Core course endpoints
 router.register(r"categories", CategoryViewSet)
-router.register(r"courses",    CourseViewSet,    basename="course")
-
+# router.register(r"courses",    CourseViewSet,    basename="course")
 # Enrollments & past-exam endpoints
 router.register(r"enrollments",           EnrollmentViewSet,    basename="enrollment")
 router.register(r"exams/past-questions",  PastQuestionViewSet,  basename="pastquestion")
-
 # JAMB endpoints
 router.register(r"jamb/subjects",   JAMBSubjectViewSet,  basename="jamb-subject")
 router.register(r"jamb/questions",  JAMBQuestionViewSet, basename="jamb-question")
 router.register(r"jamb/strategies", StrategyViewSet,     basename="jamb-strategy")
-
 # Testimonials
 router.register(r"testimonials", TestimonialViewSet, basename="testimonial")
 
@@ -49,19 +46,15 @@ router.register(r"testimonials", TestimonialViewSet, basename="testimonial")
 urlpatterns = [
     # Redirect root to the API root
     path("", RedirectView.as_view(url="/api/", permanent=False)),
-
     # Admin site
     path("admin/", admin.site.urls),
-
     # API root & all registered ViewSets
     path("api/", include(router.urls)),
-
+    path("api/courses/", include("courses.urls")),
     # Auth endpoints (login, register, GDPR, etc.)
     path("api/auth/", include("accounts.urls")),
-
     # Include payment URLs for initialize, verify, webhook
     path("api/", include("payment.urls")),
-
     # A plain-text overview of the API
     path("api/overview/", api_plaintext_overview, name="api_plaintext_overview"),
 ]
