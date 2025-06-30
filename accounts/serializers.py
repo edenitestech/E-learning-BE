@@ -11,6 +11,7 @@ from enrollments.serializers import (
     LessonProgressSerializer,
     AnswerSerializer,
 )
+from .models import Notification, Message
 
 User = get_user_model()
 
@@ -132,3 +133,18 @@ class MyTokenObtainPairSerializer(serializers.Serializer):
             "refresh": refresh_token_str,
             "access":  access_token_str,
         }
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ["id", "verb", "created_at", "is_read"]
+
+class MessageSerializer(serializers.ModelSerializer):
+    sender    = serializers.CharField(source="sender.username", read_only=True)
+    recipient = serializers.CharField(source="recipient.username")
+
+    class Meta:
+        model = Message
+        fields = ["id", "sender", "recipient", "subject", "body", "sent_at", "is_read"]
+        read_only_fields = ["id", "sender", "sent_at"]
