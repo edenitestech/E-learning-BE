@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 3) DEBUG & SECRET KEY
 # ────────────────────────────────────────────────────────────────────────────────
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback-hardcoded-key")
-DEBUG      = True 
+DEBUG = os.getenv("DJANGO_DEBUG") == True
 
 
 # ────────────────────────────────────────────────────────────────────────────────
