@@ -57,6 +57,7 @@ urlpatterns = [
     path("api/", include("payment.urls")),
     # A plain-text overview of the API
     path("api/overview/", api_plaintext_overview, name="api_plaintext_overview"),
+    path("api/exams/", include("exams.urls")),
 ]
 
 # Serve media files in DEBUG

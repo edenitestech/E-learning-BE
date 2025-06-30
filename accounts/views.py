@@ -12,7 +12,7 @@ from .serializers import (
     RegisterSerializer,
     ProfileSerializer,
     FullDataExportSerializer,
-    UserDataExportSerializer,
+    UserDataExportSerializer, ProfileSerializer
 )
 from courses.models import Course
 from courses.serializers import CourseSerializer
@@ -22,6 +22,9 @@ from enrollments.serializers import (
     LessonProgressSerializer,
     AnswerSerializer,
 )
+from rest_framework import viewsets
+from .models import Notification, Message
+from .serializers import NotificationSerializer, MessageSerializer
 
 User = get_user_model()
 
@@ -96,39 +99,51 @@ class DashboardView(APIView):
 
     def get(self, request):
         user = request.user
+        response_data = {}  # <- Make sure this is a dict
 
         if user.is_instructor:
-            # Instructor: list own courses + enrollment counts
-            courses = Course.objects.filter(instructor=user).annotate(
-                num_students=Count("orders")  # orders → enrollments happen on successful payment
+            # Instructor side
+            courses = (
+                Course.objects.filter(instructor=user)
+                .annotate(num_students=Count("orders"))
             )
-            data = {
-                "role": "instructor",
-                "courses": CourseSerializer(courses, many=True).data,
-                "enrollment_stats": {c.id: c.num_students for c in courses},
+            response_data["role"] = "instructor"
+            response_data["courses"] = CourseSerializer(courses, many=True).data
+            response_data["enrollment_stats"] = {
+                c.id: c.num_students for c in courses
             }
+
         else:
-            # Student: list enrolled courses + progress counts
+            # Student side
             enrollments = Enrollment.objects.filter(student=user)
-            progress = LessonProgress.objects.filter(
-                enrollment__in=enrollments, completed=True
-            )
-            completed_counts = (
-                progress
+            completed = (
+                LessonProgress.objects
+                .filter(enrollment__in=enrollments, completed=True)
                 .values("enrollment__course")
                 .annotate(completed_lessons=Count("id"))
             )
-            data = {
-                "role": "student",
-                "enrollments": EnrollmentSerializer(enrollments, many=True).data,
-                "progress_summary": {
-                    item["enrollment__course"]: item["completed_lessons"]
-                    for item in completed_counts
-                },
+            response_data["role"] = "student"
+            response_data["enrollments"] = EnrollmentSerializer(
+                enrollments, many=True
+            ).data
+            response_data["progress_summary"] = {
+                item["enrollment__course"]: item["completed_lessons"]
+                for item in completed
             }
 
-        return Response(data, status=status.HTTP_200_OK)
+        # Optional: add user’s own name/email to dashboard payload
+        response_data["user"] = {
+            "first_name": user.first_name,
+            "last_name":  user.last_name,
+            "email":      user.email,
+        }
 
+        # TODO: Hook up your real notifications/messages logic here.
+        # For now, stub out empty lists so the front‑end doesn’t blow up:
+        response_data["notifications"] = []
+        response_data["inbox"]         = []
+
+        return Response(response_data, status=status.HTTP_200_OK)
 
 class LogoutView(APIView):
     """
@@ -216,3 +231,33 @@ class GDPRDeleteAccountView(APIView):
             status=status.HTTP_204_NO_CONTENT
         )
 
+class NotificationViewSet(viewsets.ModelViewSet):
+    """
+    List and mark notifications as read.
+    """
+    serializer_class   = NotificationSerializer
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by("-created_at")
+
+    def perform_update(self, serializer):
+        # support marking as read
+        serializer.instance.is_read = serializer.validated_data.get("is_read", True)
+        serializer.instance.save()
+        return serializer
+
+class MessageViewSet(viewsets.ModelViewSet):
+    """
+    Send messages and list received messages.
+    """
+    serializer_class = MessageSerializer
+
+    def get_permissions(self):
+        # Only authenticated users may send/read
+        return [permissions.IsAuthenticated()]
+
+    def get_queryset(self):
+        return Message.objects.filter(recipient=self.request.user).order_by("-sent_at")
+
+    def perform_create(self, serializer):
+        serializer.save(sender=self.request.user)
