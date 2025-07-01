@@ -51,10 +51,9 @@ INSTALLED_APPS = [
     "django_extensions",
     "django_cryptography",
     "nested_admin",
-    "accounts.apps.AccountsConfig",
-
+    
     # Your apps
-    "accounts",
+    "accounts.apps.AccountsConfig",
     "courses",
     "enrollments",
     "exams",
