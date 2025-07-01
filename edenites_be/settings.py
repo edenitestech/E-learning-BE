@@ -158,7 +158,7 @@ EXAM_SUBSCRIPTION_FEES = {
 if DEBUG:
     DOMAIN = os.getenv("DOMAIN_LOCAL", "http://localhost:8000")
 else:
-    DOMAIN = os.getenv("DOMAIN_PROD", "https://e-learning-be-3n5m.onrender.com")
+    DOMAIN = os.getenv("DOMAIN_PROD", "https://edenites-be-125a.onrender.com")
 
 # ────────────────────────────────────────────────────────────────────────────────
 # 10) AUTHENTICATION BACKENDS & SETTINGS
