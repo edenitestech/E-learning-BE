@@ -2,12 +2,9 @@
 
 
 from rest_framework.routers import DefaultRouter
-from .views import ExamSubjectViewSet, PastQuestionViewSet, SubscriptionViewSet
+from .views import PastQuestionViewSet, SubscriptionViewSet
 
 router = DefaultRouter()
-# GET /api/exams/subjects/       POST /api/exams/subjects/
-# GET /api/exams/subjects/{pk}/  etc.
-router.register(r"subjects", ExamSubjectViewSet, basename="exam-subject")
 
 # GET /api/exams/past-questions/        POST /api/exams/past-questions/
 # GET /api/exams/past-questions/{pk}/   PUT/PATCH/DELETE /api/exams/past-questions/{pk}/
