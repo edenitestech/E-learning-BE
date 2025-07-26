@@ -39,7 +39,7 @@ class CourseAdmin(admin.ModelAdmin):
     )
     list_filter    = ("category", "instructor", "is_free", "is_featured")
     search_fields  = ("title", "description", "instructor__username")
-    list_editable  = ("is_featured",)
+    list_editable  = ("is_featured", "is_free",)
     fieldsets = (
         (None, {
             "fields": (
