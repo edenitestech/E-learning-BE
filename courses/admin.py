@@ -34,10 +34,30 @@ class CourseAdmin(admin.ModelAdmin):
         "instructor",
         "price",
         "is_free",
+        "is_featured",
         "created_at"
     )
-    list_filter    = ("category", "instructor", "is_free")
+    list_filter    = ("category", "instructor", "is_free", "is_featured")
     search_fields  = ("title", "description", "instructor__username")
+    list_editable  = ("is_featured",)
+    fieldsets = (
+        (None, {
+            "fields": (
+                "title",
+                "description",
+                "category",
+                "instructor",
+                "price",
+                "is_free",
+                "is_featured",   # ← add here too
+            )
+        }),
+        ("Timestamps", {
+            "fields": ("created_at",),
+            "classes": ("collapse",),
+        }),
+    )
+    readonly_fields = ("created_at",)
 
 
 #

@@ -17,10 +17,11 @@ class CourseSerializer(serializers.ModelSerializer):
     category   = serializers.SlugRelatedField(slug_field="name", queryset=Category.objects.all())
     instructor = serializers.CharField(read_only=True, source="instructor.username")
     is_free    = serializers.BooleanField(default=False)
+    is_featured = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Course
-        fields = ["id","title","description","category","instructor","price","is_free","created_at"]
+        fields = ["id","title","description","category","instructor","price","is_free", "is_featured", "created_at"]
         read_only_fields = ["id","instructor","created_at"]
 
 #
