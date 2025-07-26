@@ -44,6 +44,10 @@ class Course(models.Model):
         default=False,
         help_text="If True, course is entirely free; otherwise price applies."
     )
+    is_featured = models.BooleanField(
+        default=False,
+        help_text="If True, this course shows up in the featured list."
+    )
     created_at  = models.DateTimeField(auto_now_add=True, null=True)
 
     def __str__(self):

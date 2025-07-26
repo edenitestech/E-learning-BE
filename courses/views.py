@@ -1,10 +1,11 @@
 # courses/views.py
-
+from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 
 from .models import Category, Course, Lesson, Quiz, Order
 from .serializers import (
@@ -47,14 +48,14 @@ class CourseViewSet(viewsets.ModelViewSet):
     """
     queryset = Course.objects.all().order_by("-created_at")
     serializer_class = CourseSerializer
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ["category__name", "instructor__username"]
-    search_fields    = ["title", "description"]
+    search_fields   = ["title", "description", "category__name", "instructor__username"]
     ordering_fields  = ["title", "created_at"]
 
     def get_permissions(self):
         # Public: list & retrieve courses
-        if self.action in ["list", "retrieve"]:
+        if self.action in ["list", "retrieve", "featured"]:
             return [permissions.AllowAny()]
 
         # Public GET lessons/quizzes
@@ -79,7 +80,22 @@ class CourseViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(instructor=self.request.user)
 
-    #
+    # the fraturred courses
+    @action(detail=False, methods=["get"], url_path="featured", permission_classes=[AllowAny])
+    def featured(self, request):
+        """
+        GET /api/courses/featured/
+        Returns all courses flagged as featured, ordered by newest.
+        """
+        qs = Course.objects.filter(is_featured=True).order_by("-created_at")
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = CourseSerializer(qs, many=True, context={"request": request})
+        return Response(serializer.data)
+
     # ─── Unified Lessons endpoint ─────────────────────────────────────────
     #
     # ─── unified lessons endpoint for LIST, CREATE, RETRIEVE, UPDATE, DELETE ───
